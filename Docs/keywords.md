@@ -26,7 +26,6 @@
 | Palabra clave | Uso                                         |
 | ------------- | ------------------------------------------- |
 | `fn`          | Declarar una función.                       |
-| `ask`         | Recibir datos desde el usuario por consola. |
 | `call`        | Llamar una función almacenada como variable.|
 
 ## 🏷️ Atributos para Variables y Funciones
@@ -41,7 +40,8 @@
 ## 📃 Entrada/Salida
 | Palabra clave | Uso                                       |
 | ------------- | ----------------------------------------- |
-| `show`        | Mostrar texto u otros valores en consola. |
+| `print`        | Mostrar texto u otros valores en consola. |
+| `ask`         | Recibir datos desde el usuario por consola. |
 | `read`        | Leer un archivo externo.                  |
 | `save`        | Escribir datos en un archivo.             |
 

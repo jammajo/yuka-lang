@@ -1,5 +1,6 @@
 use crate::token::{Token, TokenType};
 use crate::error::LemonError;
+use crate::keywords::Keyword;
 
 pub fn tokenize(code: &str) -> Result<Vec<Token>, LemonError> {
     let mut tokens = Vec::new();
@@ -42,12 +43,12 @@ fn classify(word: &str) -> Token {
             token_type: Number,
             value: word.to_string(),
         }
-    } else if ["print", "add", "exit"].contains(&word) {
+    } else if let Some(kw) = Keyword::from_str(word) {
         Token {
-            token_type: Keyword,
+            token_type: TokenType::Keyword(kw),
             value: word.to_string(),
         }
-    } else if word.chars().all(char::is_alphabetic) {
+    } else if word.chars().all(|c| c.is_alphanumeric() || c == '_') {
         Token {
             token_type: Identifier,
             value: word.to_string(),

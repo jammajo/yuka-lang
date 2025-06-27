@@ -1,8 +1,10 @@
+use crate::keywords::Keyword;
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum TokenType {
     Identifier,
     Number,
-    Keyword,
+    Keyword(Keyword),
     Symbol(char),
     Unknown,
 }

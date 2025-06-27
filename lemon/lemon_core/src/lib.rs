@@ -1,9 +1,10 @@
-mod lexer;
-mod parser;
-mod ast;
-mod error;
-mod eval;
-mod token;
+mod lexer; 
+mod parser; 
+mod ast; 
+mod error; 
+mod eval; 
+mod token; 
+mod keywords;
 
 use error::LemonError;
 

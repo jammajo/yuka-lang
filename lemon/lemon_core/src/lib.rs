@@ -3,8 +3,8 @@ mod parser;
 mod ast; 
 mod error; 
 mod eval; 
-pub mod token; 
-pub mod keywords;
+pub mod token;
+pub mod grammar;
 
 use error::LemonError;
 

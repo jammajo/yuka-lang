@@ -1,3 +1,4 @@
+use std::fmt;
 #[derive(Debug, Clone, PartialEq)]
 pub enum Operator {
     Add,
@@ -19,5 +20,19 @@ impl Operator {
             "^" => Some(Operator::Power),
             _ => None,
         }
+    }
+}
+
+impl fmt::Display for Operator {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let symbol = match self {
+            Operator::Add => "+",
+            Operator::Subtract => "-",
+            Operator::Multiply => "*",
+            Operator::Divide => "/",
+            Operator::Modulus => "%",
+            Operator::Power => "^",
+        };
+        write!(f, "{}", symbol)
     }
 }

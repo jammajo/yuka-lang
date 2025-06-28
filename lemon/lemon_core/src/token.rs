@@ -1,11 +1,13 @@
-use crate::keywords::Keyword;
+use crate::grammar::keywords::Keyword;
+use crate::grammar::symbols::Symbol;
+
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TokenType {
     Identifier,
     Number,
     Keyword(Keyword),
-    Symbol(char),
+    Symbol(Symbol),
     Unknown,
 }
 

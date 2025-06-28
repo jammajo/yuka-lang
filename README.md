@@ -18,7 +18,7 @@ Whether you're a beginner or a pro, Yuka lets you **think clearly and code faste
 - 🔹 **Powerful enough for real apps**
 - 🔹 **Designed for modern desktop interfaces**
 - 🔹 **Built with simplicity in mind**
-- 🔹 **Multilingual support (English/Spanish)**
+- 🔹 **Multilingual support**
 
 ---
 
@@ -36,7 +36,7 @@ Tanto si eres principiante como experto, Yuka te permite **pensar con claridad y
 - 🔹 **Suficientemente potente para apps reales**
 - 🔹 **Diseñado para interfaces de escritorio modernas**
 - 🔹 **Construido con simplicidad como base**
-- 🔹 **Soporte multilingüe (Inglés/Español)**
+- 🔹 **Soporte multilingüe**
 
 ---
 

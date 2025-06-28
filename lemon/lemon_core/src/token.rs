@@ -19,6 +19,8 @@ pub enum TokenType {
     Logical(Logical),
     Type(Type),
     Comment(Comment),
+    StringLiteral,
+    EOF,
 }
 
 #[derive(Debug, Clone, PartialEq)]

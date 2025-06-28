@@ -25,4 +25,6 @@ pub enum TokenType {
 pub struct Token {
     pub token_type: TokenType,
     pub value: String,
+    pub line: usize,
+    pub column: usize,
 }

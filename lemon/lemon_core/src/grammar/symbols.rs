@@ -2,15 +2,13 @@
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Symbol{
-    Equal,
-    Plus,
-    Minus,
-    Multiply,
-    Divide,
+    Define,
     OpenParen,
     CloseParen,
     OpenBrace,
     CloseBrace,
+    OpenBraket,
+    CloseBraket,
     Semicolon,
     Comma,
     Point,
@@ -19,15 +17,13 @@ pub enum Symbol{
 impl Symbol {
     pub fn from_char(c: char) -> Option<Self> {
         match c {
-            '=' => Some(Self::Equal),
-            '+' => Some(Self::Plus),
-            '-' => Some(Self::Minus),
-            '*' => Some(Self::Multiply),
-            '/' => Some(Self::Divide),
+            '=' => Some(Self::Define),
             '(' => Some(Self::OpenParen),
             ')' => Some(Self::CloseParen),
             '{' => Some(Self::OpenBrace),
             '}' => Some(Self::CloseBrace),
+            '[' => Some(Self::OpenBraket),
+            ']' => Some(Self::CloseBraket),
             ';' => Some(Self::Semicolon),
             ',' => Some(Self::Comma),
             '.' => Some(Self::Point),
@@ -37,15 +33,13 @@ impl Symbol {
 
     pub fn to_char(&self) -> char {
         match self {
-            Self::Equal => '=',
-            Self::Plus => '+',
-            Self::Minus => '-',
-            Self::Multiply => '*',
-            Self::Divide => '/',
+            Self::Define => '=',
             Self::OpenParen => '(',
             Self::CloseParen => ')',
             Self::OpenBrace => '{',
             Self::CloseBrace => '}',
+            Self::OpenBraket => '[',
+            Self::CloseBraket => ']',
             Self::Semicolon => ';',
             Self::Comma => ',',
             Self::Point => '.',

@@ -18,7 +18,7 @@ pub fn tokenize(code: &str) -> Result<Vec<Token>, LemonError> {
             }
             tokens.push(Token {
                 token_type: TokenType::Symbol(symbol.clone()),
-                value: symbol.to_char().to_string(), // puedes cambiar esto a symbol.to_char().to_string() si usas el método `to_char()`
+                value: symbol.to_char().to_string(),
             });
         } else {
             current.push(ch);

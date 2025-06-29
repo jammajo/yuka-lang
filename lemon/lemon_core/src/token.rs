@@ -7,7 +7,7 @@ use crate::grammar::types::Type;
 use crate::grammar::comments::Comment;
 
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum TokenType {
     Identifier,
     Number,

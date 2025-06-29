@@ -1,6 +1,7 @@
-//let symbol: Symbol;
+use serde::{Serialize, Deserialize};
 
-#[derive(Debug, Clone, PartialEq, Copy)]
+//let symbol: Symbol;
+#[derive(Debug, Clone, PartialEq, Copy, Serialize, Deserialize)]
 pub enum Symbol{
     Define,
     OpenParen,

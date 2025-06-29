@@ -1,5 +1,5 @@
 use std::fmt;
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum Operator {
     Add,
     Subtract,

@@ -1,0 +1,34 @@
+// Variable declarations
+let a;
+let b = 123;
+let name = "Yuka";
+
+// Function declaration
+fun greet(name) {
+  print("Hello " + name);
+}
+
+// If / else
+if (x > 0) {
+  print("Positive");
+} else {
+  print("Non-positive");
+}
+
+// While / Do While
+while (x < 5) {
+  x = x + 1;
+}
+do {
+  print(x);
+} while (x > 0);
+
+// For
+for (let i = 0; i < 10; i = i + 1) {
+  print(i);
+}
+
+// Python-style for
+for (item in items) {
+  print(item);
+}

@@ -1,10 +1,4 @@
-use crate::grammar::keywords::Keyword;
-use crate::grammar::symbols::Symbol;
-use crate::grammar::operators::Operator;
-use crate::grammar::comparators::Comparator;
-use crate::grammar::logicals::Logical;
-use crate::grammar::types::Type;
-use crate::grammar::comments::Comment;
+pub use crate::grammar::*;
 
 
 #[derive(Debug, Clone, PartialEq, Copy)]

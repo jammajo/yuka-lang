@@ -2,10 +2,10 @@
 pub enum Comparator {
     Equal,
     NotEqual,
-    GreaterThan,
-    LessThan,
-    GreaterThanOrEqual,
-    LessThanOrEqual,
+    Greater,
+    Less,
+    GreaterEqual,
+    LessEqual,
 }
 
 impl Comparator {
@@ -13,10 +13,10 @@ impl Comparator {
         match s {
             "==" => Some(Comparator::Equal),
             "!=" => Some(Comparator::NotEqual),
-            ">" => Some(Comparator::GreaterThan),
-            "<" => Some(Comparator::LessThan),
-            ">=" => Some(Comparator::GreaterThanOrEqual),
-            "<=" => Some(Comparator::LessThanOrEqual),
+            ">" => Some(Comparator::Greater),
+            "<" => Some(Comparator::Less),
+            ">=" => Some(Comparator::GreaterEqual),
+            "<=" => Some(Comparator::LessEqual),
             _ => None,
         }
     }

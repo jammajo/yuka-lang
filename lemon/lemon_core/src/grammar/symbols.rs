@@ -11,7 +11,9 @@ pub enum Symbol{
     CloseBraket,
     Semicolon,
     Comma,
-    Point,
+    Dot,
+    Question,
+    Colon,
 }
 
 impl Symbol {
@@ -26,7 +28,9 @@ impl Symbol {
             ']' => Some(Self::CloseBraket),
             ';' => Some(Self::Semicolon),
             ',' => Some(Self::Comma),
-            '.' => Some(Self::Point),
+            '.' => Some(Self::Dot),
+            '?' => Some(Self::Question),
+            ':' => Some(Self::Colon),
             _ => None,
         }
     }
@@ -42,7 +46,9 @@ impl Symbol {
             Self::CloseBraket => ']',
             Self::Semicolon => ';',
             Self::Comma => ',',
-            Self::Point => '.',
+            Self::Dot => '.',
+            Self::Question => '?',
+            Self::Colon => ':',
         }
     }
 }

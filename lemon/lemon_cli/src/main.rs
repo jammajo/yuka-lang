@@ -16,7 +16,7 @@ fn main() {
 
     match interpret(&input) {
         Ok(result) => {
-            println!("{}", result); // Aquí puedes hacer `.trim()` si es necesario
+            println!("{:?}", result); // Aquí puedes hacer `.trim()` si es necesario
         }
         Err(e) => {
             eprintln!("❌ Error: {}", e);

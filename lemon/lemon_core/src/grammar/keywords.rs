@@ -1,4 +1,6 @@
-#[derive(Debug, Clone, PartialEq, Copy)]
+use serde::{Serialize, Deserialize};
+
+#[derive(Debug, Clone, PartialEq, Copy, Serialize, Deserialize)]
 pub enum Keyword {
     // Control flow keywords
     If,

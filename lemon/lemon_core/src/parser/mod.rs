@@ -1,32 +1,39 @@
+// Reexporta submódulos del parser
 pub mod expressions;
 pub mod statements;
 pub mod helpers;
 
 use crate::token::{Token, TokenType};
-use crate::ast::{statements::Statement, expressions::Expression};
-use expressions::*;
-use statements::*;
-use helpers::*;
+use crate::ast::{statements::Statement};
 
+/// Estructura principal del parser: contiene la lista de tokens y la posición actual
 pub struct Parser {
     tokens: Vec<Token>,
     current: usize,
 }
 
 impl Parser {
-    /// Crea un nuevo parser con la lista de tokens
+    // ========================
+    // 🔧 Constructor principal
+    // ========================
+
+    /// Crea un nuevo parser a partir de una lista de tokens generados por el lexer
     pub fn new(tokens: Vec<Token>) -> Self {
         Self { tokens, current: 0 }
     }
 
-    /// Punto de entrada del parser: analiza todos los statements del programa
+    // ========================
+    // 🎯 Punto de entrada
+    // ========================
+
+    /// Analiza todos los statements del archivo fuente y devuelve el AST completo
     pub fn parse(&mut self) -> Result<Vec<Statement>, String> {
         let mut statements = Vec::new();
 
         while !self.is_at_end() {
             match self.parse_statement() {
                 Ok(stmt) => statements.push(stmt),
-                Err(e) => return Err(e),
+                Err(e) => return Err(e), // En caso de error, se detiene el análisis
             }
         }
 
@@ -37,12 +44,12 @@ impl Parser {
     // 👀 Navegación en tokens
     // ========================
 
-    /// Revisa si llegamos al final
+    /// Devuelve `true` si hemos llegado al final del archivo (EOF)
     pub fn is_at_end(&self) -> bool {
         self.peek().token_type == TokenType::EOF
     }
 
-    /// Devuelve el token actual sin avanzar
+    /// Mira el token actual sin consumirlo
     pub fn peek(&self) -> &Token {
         &self.tokens[self.current]
     }
@@ -52,7 +59,7 @@ impl Parser {
         &self.tokens[self.current - 1]
     }
 
-    /// Avanza al siguiente token y lo devuelve
+    /// Avanza al siguiente token y devuelve el anterior
     pub fn advance(&mut self) -> &Token {
         if !self.is_at_end() {
             self.current += 1;
@@ -60,22 +67,23 @@ impl Parser {
         self.previous()
     }
 
-    /// Verifica si el token actual es del tipo esperado
+    /// Verifica si el token actual es igual al tipo dado
     pub fn check(&self, token_type: TokenType) -> bool {
         !self.is_at_end() && self.peek().token_type == token_type
     }
 
-    /// Avanza si el token actual coincide con alguno de los tipos dados
-pub fn match_token(&mut self, types: &[TokenType]) -> bool {
-    for &tt in types {
-        if self.check(tt) {
-            self.advance();
-            return true;
+    /// Intenta avanzar si el token actual coincide con alguno de los tipos dados
+    pub fn match_token(&mut self, types: &[TokenType]) -> bool {
+        for &tt in types {
+            if self.check(tt) {
+                self.advance();
+                return true;
+            }
         }
+        false
     }
-    false
-}
-    /// Consume un token del tipo esperado o lanza error con mensaje personalizado
+
+    /// Consume un token del tipo esperado o lanza un error con mensaje personalizado
     pub fn consume(&mut self, token_type: TokenType, message: &str) -> Result<Token, String> {
         if self.check(token_type) {
             Ok(self.advance().clone())
@@ -87,25 +95,9 @@ pub fn match_token(&mut self, types: &[TokenType]) -> bool {
         }
     }
 
-    /// Intenta consumir un identificador y devuelve su nombre
+    /// Consume y devuelve el valor de un identificador. Lanza error si no lo es.
     pub fn consume_identifier(&mut self, message: &str) -> Result<String, String> {
         let token = self.consume(TokenType::Identifier, message)?;
         Ok(token.value.clone())
-    }
-
-    // ==============================
-    // 🧱 Métodos principales a definir
-    // ==============================
-
-    /// Analiza un statement (instrucción)
-    pub fn parse_statement(&mut self) -> Result<Statement, String> {
-        // Esto se delega a statements.rs
-        Err("parse_statement no implementado aún".into())
-    }
-
-    /// Analiza una expresión
-    pub fn parse_expression(&mut self) -> Result<Expression, String> {
-        // Esto se delega a expressions.rs
-        Err("parse_expression no implementado aún".into())
     }
 }

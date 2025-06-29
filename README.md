@@ -72,4 +72,4 @@ Este proyecto está bajo la **Licencia MIT**.
 More documentation, examples, and tools coming soon!  
 Pronto más documentación, ejemplos y herramientas.
 
-> 🌐 Made with love by Jairo Gamarra
+> 🌐 Made with love by Jammajo

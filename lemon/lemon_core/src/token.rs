@@ -1,6 +1,5 @@
 pub use crate::grammar::*;
 
-
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub enum TokenType {
     Identifier,

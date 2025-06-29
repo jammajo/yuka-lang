@@ -90,7 +90,34 @@ pub fn tokenize(code: &str) -> Result<Vec<Token>, LemonError> {
             continue;
         }
 
-        // Agrupación de operadores dobles
+        // Operadores lógicos dobles (&&, ||)
+        if let Some(double_log) = try_double_char_logical(&mut chars) {
+            flush_current(&mut current, &mut tokens, line, start_column);
+            tokens.push(Token {
+                token_type: TokenType::Logical(double_log),
+                value: double_log.to_string(),
+                line,
+                column,
+            });
+            column += 2;
+            continue;
+        }
+
+        // Operador lógico unitario (!)
+        if let Some(logical) = crate::grammar::logicals::Logical::from_str(&ch.to_string()) {
+            flush_current(&mut current, &mut tokens, line, start_column);
+            tokens.push(Token {
+                token_type: TokenType::Logical(logical),
+                value: ch.to_string(),
+                line,
+                column,
+            });
+            chars.next();
+            column += 1;
+            continue;
+        }
+
+        // Agrupación de operadores dobles (+, -, etc.)
         if let Some(double_op) = try_double_char_operator(&mut chars) {
             flush_current(&mut current, &mut tokens, line, start_column);
             tokens.push(Token {
@@ -261,5 +288,19 @@ fn try_double_char_operator(
         chars.next(); // consumir ch1
         chars.next(); // consumir ch2
         op
+    })
+}
+
+fn try_double_char_logical(
+    chars: &mut std::iter::Peekable<std::str::Chars>,
+) -> Option<crate::grammar::logicals::Logical> {
+    let ch1 = chars.peek().copied()?;
+    let ch2 = chars.clone().nth(1)?;
+    let pair = format!("{}{}", ch1, ch2);
+
+    crate::grammar::logicals::Logical::from_str(&pair).map(|log| {
+        chars.next();
+        chars.next();
+        log
     })
 }

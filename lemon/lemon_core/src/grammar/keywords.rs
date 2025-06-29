@@ -13,6 +13,7 @@ pub enum Keyword {
     Break,
     Continue,
     In,
+    Return,
     // Function and variable keywords
     Let,
     From,
@@ -69,6 +70,7 @@ impl Keyword {
             "break" => Some(Keyword::Break),
             "continue" => Some(Keyword::Continue),
             "in" => Some(Keyword::In),
+            "return" => Some(Keyword::Return),
             "let" => Some(Keyword::Let),
             "from" => Some(Keyword::From),
             "back" => Some(Keyword::Back),

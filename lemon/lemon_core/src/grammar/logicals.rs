@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub enum Logical {
     And,
@@ -16,5 +18,16 @@ impl Logical {
             "!" => Some(Logical::Not),
             _ => None,
         }
+    }
+}
+
+impl fmt::Display for Logical {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let symbol = match self {
+            Logical::And => "&&",
+            Logical::Or => "||",
+            Logical::Not => "!",
+        };
+        write!(f, "{}", symbol)
     }
 }

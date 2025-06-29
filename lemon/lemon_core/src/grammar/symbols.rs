@@ -1,6 +1,6 @@
 //let symbol: Symbol;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum Symbol{
     Define,
     OpenParen,

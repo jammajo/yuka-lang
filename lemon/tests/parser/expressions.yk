@@ -1,0 +1,25 @@
+// Literales
+true;
+false;
+"hello";
+123;
+45.67;
+None;
+
+// Agrupación
+(1 + 2);
+
+// Aritmética
+1 + 2 * 3 - 4 / 5;
+
+// Unarios
+!true;
+-42;
+
+// Variables
+foo;
+_bar_123;
+
+// Acceso y llamada
+foo.bar.baz;
+call()(123)(true).prop;

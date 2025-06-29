@@ -2,9 +2,9 @@ use crate::token::{Token, TokenType};
 use crate::error::LemonError;
 
 pub fn tokenize(code: &str) -> Result<Vec<Token>, LemonError> {
+    
     let mut tokens = Vec::new();
     let mut current = String::new();
-
     let mut chars = code.chars().peekable();
     let mut line = 1;
     let mut column = 1;

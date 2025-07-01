@@ -1,75 +1,87 @@
-# 🌟 Yuka — The Practical Programming Language / El Lenguaje de Programación Práctico
+# 🚧 Yuka — Reinicio en Progreso / Reboot in Progress
 
-> 🚀 Simple. Powerful. Designed for real-world apps.
-
----
-
-## 🇬🇧 What is Yuka?
-
-**Yuka** is a modern, minimalist programming language designed for people who want to **build powerful applications with elegant and simple code**.
-
-Forget about long syntax, obscure rules, or unnecessary complexity. Yuka focuses on **clarity**, **speed**, and **real usability**.
-
-Whether you're a beginner or a pro, Yuka lets you **think clearly and code faster**.
-
-### ✨ Key features
-
-- 🔹 **Readable and short syntax**
-- 🔹 **Powerful enough for real apps**
-- 🔹 **Designed for modern desktop interfaces**
-- 🔹 **Built with simplicity in mind**
-- 🔹 **Multilingual support**
+> ⚠️ **Este proyecto no está muerto**. Está siendo reconstruido desde cero para hacerlo mejor.  
+> ⚠️ **This project is not dead**. It's being rebuilt from scratch to make it better.
 
 ---
 
 ## 🇪🇸 ¿Qué es Yuka?
 
-**Yuka** es un lenguaje de programación moderno y minimalista, diseñado para quienes quieren **crear aplicaciones potentes con un código simple y elegante**.
+**Yuka** es un lenguaje de programación en desarrollo, diseñado para ser:
 
-Olvídate de la sintaxis larga, reglas confusas o complejidad innecesaria. Yuka se enfoca en la **claridad**, la **rapidez** y la **utilidad real**.
+- 🧠 Sencillo pero poderoso
+- 🖥 Ideal para apps de escritorio con interfaces modernas
+- 🤖 Capaz de manejar lógica compleja y expresiva
+- 🌍 Bilingüe (documentación en español e inglés)
+- 🦀 Implementado desde cero en **Rust**
 
-Tanto si eres principiante como experto, Yuka te permite **pensar con claridad y programar más rápido**.
-
-### ✨ Características principales
-
-- 🔹 **Sintaxis corta y legible**
-- 🔹 **Suficientemente potente para apps reales**
-- 🔹 **Diseñado para interfaces de escritorio modernas**
-- 🔹 **Construido con simplicidad como base**
-- 🔹 **Soporte multilingüe**
+El enfoque está en la **practicidad**, **claridad** y **utilidad profesional**.
 
 ---
 
-## 🧪 Example / Ejemplo
+## 🇬🇧 What is Yuka?
 
-```yuka
-print "Hello, world!"
-```
+**Yuka** is a programming language in development, designed to be:
 
-Yuka makes your intentions clear with **short and intuitive keywords**.
+- 🧠 Simple yet powerful
+- 🖥 Ideal for desktop apps with modern UIs
+- 🤖 Capable of handling expressive, complex logic
+- 🌍 Bilingual (documentation in Spanish and English)
+- 🦀 Built from scratch in **Rust**
 
----
-
-## 🧰 Project status / Estado del proyecto
-
-> 🧪 **Yuka is currently in early development.**  
-> You're welcome to follow along or contribute ideas!
-
-> 🧪 **Yuka está en desarrollo inicial.**  
-> ¡Eres bienvenido a seguir el proyecto o aportar ideas!
+The focus is on **practicality**, **clarity**, and **professional usefulness**.
 
 ---
 
-## 📄 License / Licencia
+## 🔄 🇪🇸 ¿Por qué se reinicia?
 
-This project is licensed under the **MIT License**.  
-Este proyecto está bajo la **Licencia MIT**.
+Tras una primera versión funcional (lexer, parser, AST), se decidió **reiniciar el proyecto desde cero** para:
+
+- Reorganizar mejor la arquitectura interna
+- Simplificar el código y hacerlo más mantenible
+- Implementar nuevas ideas con mayor claridad
 
 ---
 
-## 🙌 Stay tuned / ¡Atento!
+## 🔄 🇬🇧 Why is it rebooting?
 
-More documentation, examples, and tools coming soon!  
-Pronto más documentación, ejemplos y herramientas.
+After a functional first version (lexer, parser, AST), the project is being **restarted from scratch** to:
 
-> 🌐 Made with love by Jammajo
+- Restructure the internal architecture
+- Simplify the code for better maintainability
+- Implement new ideas with clearer design
+
+---
+
+## 🧪 Estado actual / Current Status
+
+- ✅ Lexer con manejo de errores léxicos
+- ✅ Parser completo de expresiones
+- ⚙️ Base de tokens y AST funcional
+
+➡️ Todo esto servirá como referencia para la nueva versión, pero el código **será reescrito desde cero**.
+
+---
+
+## 🛣️ Próximos pasos / Next Steps
+
+- [ ] Rediseñar estructura de carpetas y módulos
+- [ ] Reescribir el lexer desde cero
+- [ ] Definir una gramática sólida y simple
+- [ ] Diseñar un AST flexible y mantenible
+- [ ] Implementar el nuevo parser
+- [ ] Documentar cada módulo de forma clara y bilingüe
+
+---
+
+## 📝 Licencia / License
+
+MIT — Libre para usar, modificar y compartir.  
+MIT — Free to use, modify, and share.
+
+---
+
+## 🙏 Gracias / Thank You
+
+Gracias por tu interés en Yuka. El camino no siempre es lineal, a veces **reiniciar es avanzar**.  
+Thanks for your interest in Yuka. The path isn't always linear — sometimes **starting over means moving forward**.

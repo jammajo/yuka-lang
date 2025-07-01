@@ -1,6 +1,7 @@
 # Ejemplos de Uso y Funcionalidad de Keywords
 
 ## 🔢 Control de Flujo
+
 ```tu_lang
 if x > 10
   show "Mayor que 10"
@@ -10,7 +11,7 @@ else
   show "Menor que 10"
 end
 
-loop i < 5
+while i < 5
   show i
   i = i + 1
 end
@@ -18,7 +19,7 @@ end
 do
   show "Se ejecuta al menos una vez"
   i = i + 1
-loop i < 5
+while i < 5
 end
 
 for i = 0; i < 3; i = i + 1
@@ -33,6 +34,7 @@ end
 ```
 
 ## 🔹 Declaración y Variables
+
 ```tu_lang
 let edad = 25
 let nombre: string = "Ana"
@@ -42,6 +44,7 @@ del edad
 ```
 
 ## 💻 Funciones
+
 ```tu_lang
 fn saludar(nombre)
   show "Hola, " + nombre
@@ -52,6 +55,7 @@ call saludar(nombre)
 ```
 
 ## 🏷️ Atributos para Variables y Funciones
+
 ```tu_lang
 let PI sure = 3.1416
 
@@ -65,6 +69,7 @@ end
 ```
 
 ## 📃 Entrada/Salida
+
 ```tu_lang
 show "Hola mundo"
 let texto = read "archivo.txt"
@@ -72,6 +77,7 @@ save "resultado.txt" texto
 ```
 
 ## 🎨 Gráficos / GUI
+
 ```tu_lang
 ui
 
@@ -88,6 +94,7 @@ end
 ```
 
 ## ⚙️ Otros
+
 ```tu_lang
 # Esto es un comentario
 

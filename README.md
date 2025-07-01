@@ -43,7 +43,7 @@ Tanto si eres principiante como experto, Yuka te permite **pensar con claridad y
 ## 🧪 Example / Ejemplo
 
 ```yuka
-say "Hello, world!"
+print "Hello, world!"
 ```
 
 Yuka makes your intentions clear with **short and intuitive keywords**.

@@ -2,3 +2,4 @@ Cargo.lock
 debug/
 target/
 cloc.exe
+yuka-lang.code-workspace

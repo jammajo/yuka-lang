@@ -1,37 +1,47 @@
-// token.rs
+// ============================
+// token.rs — Definición de tokens
+// ============================
 
-use crate::grammar::*;
-use std::fmt;
+use crate::grammar::*; // Importa enums de palabras clave, operadores, símbolos, etc.
+use std::fmt;          // Para implementar fmt::Display
+use serde::{Serialize, Deserialize}; // (opcional) Para serializar a JSON o similar
 
-use serde::{Serialize, Deserialize}; // <- si vas a usar JSON (opcional)
+// ============================
+// 🔠 Tipos de token reconocidos
+// ============================
 
-// Representa los distintos tipos de tokens
 #[derive(Debug, Clone, PartialEq, Copy, Serialize, Deserialize)]
 pub enum TokenType {
-    Identifier,
-    Number,
-    Keyword(Keyword),
-    Symbol(Symbol),
-    Unknown,
-    Operator(Operator),
-    Comparator(Comparator),
-    Logical(Logical),
-    Type(Type),
-    Comment(Comment),
-    StringLiteral,
-    EOF,
+    Identifier,                     // Identificadores de variables, funciones, etc.
+    Number,                         // Números (int o float, se decide en el parser)
+    Keyword(Keyword),               // Palabras clave como let, if, while...
+    Symbol(Symbol),                 // Símbolos como (, ), {, }, =, ;, etc.
+    Unknown,                        // Token no reconocido (error léxico)
+    Operator(Operator),             // Operadores aritméticos: +, -, *, /
+    Comparator(Comparator),         // Comparadores: ==, !=, <, >
+    Logical(Logical),               // Lógicos: and, or, !
+    Type(Type),                     // Tipos de dato: string, bool, number, etc.
+    Comment(Comment),               // Comentarios: //, /* */
+    StringLiteral,                  // Cadenas de texto: "hola mundo"
+    EOF,                            // Fin del archivo fuente
 }
 
-// Representa un token individual con posición y valor
+// ============================
+// 📦 Representación completa de un token
+// ============================
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Token {
-    pub token_type: TokenType,
-    pub value: String,
-    pub line: usize,
-    pub column: usize,
+    pub token_type: TokenType,  // El tipo de token (Keyword, Operator, etc.)
+    pub value: String,          // Texto exacto del código fuente
+    pub line: usize,            // Línea en el código fuente
+    pub column: usize,          // Columna (posición horizontal)
 }
 
-// Display bonito para facilitar depuración en consola
+// ============================
+// 🖨️ Visualización amigable en consola
+// ============================
+
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
@@ -45,14 +55,19 @@ impl fmt::Display for Token {
     }
 }
 
-// Función opcional para agrupar tokens por línea
+// ============================
+// 🧾 Agrupa tokens por línea (útil para debugging visual)
+// ============================
+
 pub fn print_tokens_by_line(tokens: &[Token]) {
     let mut current_line = 0;
+
     for token in tokens {
         if token.line != current_line {
             current_line = token.line;
             println!("\nLínea {}:", current_line);
         }
-        println!("  {}", token); // Usa el Display de arriba
+
+        println!("  {}", token); // Usa Display implementado arriba
     }
 }

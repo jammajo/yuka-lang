@@ -67,7 +67,7 @@
 
 | Palabra clave | Uso                                       |
 | ------------- | ----------------------------------------- |
-| `#`           | Iniciar un comentario.                    |
+| `//`          | Iniciar un comentario.                    |
 | `tick`        | Ejecutar ciclo de motor (main while).     |
 | `wait`        | Esperar cierta cantidad de tiempo.        |
 | `as`          | Crear alias para importaciones.           |

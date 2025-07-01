@@ -1,25 +1,59 @@
 // Literales
 true;
 false;
-"hello";
+None;
+"Hello, world!";
 123;
 45.67;
-None;
 
-// Agrupación
+// Agrupaciones
 (1 + 2);
-
-// Aritmética
-1 + 2 * 3 - 4 / 5;
+("a" + "b");
+(3 * (4 + 5));
 
 // Unarios
-!true;
+!false;
 -42;
+-3.14;
 
 // Variables
-foo;
-_bar_123;
+x;
+_some_var;
+Data42;
 
-// Acceso y llamada
+// Aritmética
+1 + 2 - 3 * 4 / 5;
+(a + b) * (c - d);
+
+// Comparaciones
+a == b;
+x != y;
+x < 10;
+y >= 3.14;
+
+// Lógicos
+true && false;
+x || y;
+!z;
+
+// Acceso a propiedades
+foo.bar;
 foo.bar.baz;
-call()(123)(true).prop;
+data.get.value;
+
+// Llamadas
+foo();
+foo(1, 2, 3);
+call(123)(true).prop;
+(call)().x;
+
+// Llamada + acceso combinados
+object.method().prop;
+a.b().c.d();
+
+// Ternario
+x > 0 ? "positive" : "non-positive";
+condition ? a + b : c - d;
+
+// Mezclas complejas
+(obj.method(42)).prop + (nested ? 1 : 0);

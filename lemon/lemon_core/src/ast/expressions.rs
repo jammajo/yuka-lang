@@ -1,92 +1,156 @@
-/// Representa cualquier expresión que devuelve un valor en Yuka.
+/// Representa cualquier expresión que produce un valor en el lenguaje Yuka.
+/// 
+/// Las expresiones incluyen literales, operaciones, llamadas a funciones,
+/// acceso a propiedades, entre otros. Se usan en contextos donde se espera
+/// una evaluación que retorne un valor.
 #[derive(Debug, Clone)]
 pub enum Expression {
-    /// Un número literal, como 42 o 3.14
+    /// Literal numérico, por ejemplo: `42`, `3.14`, etc.
     Number(f64),
 
-    /// Una cadena de texto, como "hola"
+    /// Literal de texto, como `"hola"` o `"Yuka"`.
     String(String),
 
-    /// Un valor booleano: true o false
+    /// Valor booleano literal: `true` o `false`.
     Boolean(bool),
 
-    /// Una variable, como x o nombre
+    /// Referencia a una variable previamente declarada.
+    /// Por ejemplo: `x`, `nombre`, `counter`, etc.
     Variable(String),
 
-    /// Una operación binaria: a + b, x > 10, etc.
+    /// Expresión de operación binaria entre dos expresiones.
+    /// Se utiliza para operaciones aritméticas, comparaciones y lógicas.
+    /// Ejemplos: `a + b`, `x > 10`, `flag && condition`
     Binary {
-        left: Box<Expression>,     // lado izquierdo de la operación
-        op: BinaryOp,              // operador (suma, resta, etc.)
-        right: Box<Expression>,    // lado derecho de la operación
+        /// Lado izquierdo de la operación (puede ser cualquier expresión).
+        left: Box<Expression>,
+        /// Operador binario que define la operación.
+        op: BinaryOp,
+        /// Lado derecho de la operación.
+        right: Box<Expression>,
     },
 
-    /// Una operación unaria: -x, !flag
+    /// Expresión de operación unaria sobre una sola expresión.
+    /// Por ejemplo: `-x`, `!activo`
     Unary {
-        op: UnaryOp,               // operador unario (!, -)
-        expr: Box<Expression>,     // expresión sobre la que se aplica
+        /// Operador unario aplicado.
+        op: UnaryOp,
+        /// Expresión sobre la que se aplica el operador.
+        expr: Box<Expression>,
     },
 
-    /// Llamada a función: miFuncion(1, 2)
+    /// Llamada a una función con uno o varios argumentos.
+    /// Por ejemplo: `saludar("Juan")`
     Call {
-        function: Box<Expression>, // función a invocar (puede ser variable o expresión)
-        args: Vec<Expression>,     // lista de argumentos
+        /// Expresión que representa la función a invocar.
+        /// Puede ser un identificador simple o una propiedad.
+        function: Box<Expression>,
+        /// Lista de expresiones que se pasan como argumentos.
+        args: Vec<Expression>,
     },
 
-    /// Agrupación de una expresión con paréntesis: (1 + 2)
+    /// Agrupación explícita de una expresión entre paréntesis.
+    /// Utilizada para alterar el orden de evaluación.
+    /// Ejemplo: `(1 + 2) * 3`
     Grouping(Box<Expression>),
 
-    /// Asignación de valor a una variable existente: x = 5
+    /// Asignación de un nuevo valor a una variable ya existente.
+    /// Ejemplo: `x = 5`
     Assign {
-        variable: String,          // nombre de la variable
-        value: Box<Expression>,    // nuevo valor
+        /// Nombre de la variable a la que se le asigna el nuevo valor.
+        variable: String,
+        /// Valor a asignar.
+        value: Box<Expression>,
     },
 
-    /// Acceso a una propiedad: objeto.propiedad
+    /// Acceso a una propiedad de un objeto.
+    /// Ejemplo: `persona.nombre`
     Get {
-        object: Box<Expression>,   // expresión que representa al objeto
-        name: String,              // nombre de la propiedad
+        /// Expresión que representa el objeto contenedor.
+        object: Box<Expression>,
+        /// Nombre de la propiedad que se desea acceder.
+        name: String,
     },
 
-    /// Modificación de una propiedad: objeto.propiedad = valor
+    /// Modificación de una propiedad de un objeto.
+    /// Ejemplo: `persona.edad = 30`
     Set {
-        object: Box<Expression>,   // expresión del objeto
-        name: String,              // propiedad a modificar
-        value: Box<Expression>,    // nuevo valor de la propiedad
+        /// Expresión que representa el objeto contenedor.
+        object: Box<Expression>,
+        /// Nombre de la propiedad a modificar.
+        name: String,
+        /// Nuevo valor que se le asigna a la propiedad.
+        value: Box<Expression>,
     },
 
-    /// Expresión ternaria: cond ? a : b
+    /// Expresión condicional ternaria, con una condición y dos posibles resultados.
+    /// Ejemplo: `es_admin ? "Sí" : "No"`
     Ternary {
-        condition: Box<Expression>,    // condición a evaluar
-        then_branch: Box<Expression>,  // resultado si la condición es verdadera
-        else_branch: Box<Expression>,  // resultado si es falsa
+        /// Condición a evaluar.
+        condition: Box<Expression>,
+        /// Resultado si la condición es verdadera.
+        then_branch: Box<Expression>,
+        /// Resultado si la condición es falsa.
+        else_branch: Box<Expression>,
     },
 
-    /// Representa un valor nulo o vacío (como null o undefined)
+    Literal(Literal),
+
+
+    /// Valor nulo o indefinido. Representa la ausencia de un valor.
+    /// Similar a `null` o `undefined` en otros lenguajes.
     None,
 }
 
-/// Representa los operadores binarios disponibles en Yuka.
+/// Enum que define todos los operadores binarios que soporta Yuka.
+///
+/// Estos operadores se usan en expresiones que combinan dos operandos.
 #[derive(Debug, Clone)]
 pub enum BinaryOp {
-    Add,  // +
-    Sub,  // -
-    Mul,  // *
-    Div,  // /
+    /// Suma: `+`
+    Add,
+    /// Resta: `-`
+    Sub,
+    /// Multiplicación: `*`
+    Mul,
+    /// División: `/`
+    Div,
 
-    Eq,   // ==
-    Neq,  // !=
-    Gt,   // >
-    Lt,   // <
-    Gte,  // >=
-    Lte,  // <=
+    /// Igualdad: `==`
+    Eq,
+    /// Desigualdad: `!=`
+    Neq,
+    /// Mayor que: `>`
+    Gt,
+    /// Menor que: `<`
+    Lt,
+    /// Mayor o igual: `>=`
+    Gte,
+    /// Menor o igual: `<=`
+    Lte,
 
-    And,  // &&
-    Or,   // ||
+    /// Conjunción lógica: `&&`
+    And,
+    /// Disyunción lógica: `||`
+    Or,
 }
 
-/// Representa los operadores unarios disponibles en Yuka.
+/// Enum que define todos los operadores unarios disponibles.
+///
+/// Los operadores unarios actúan sobre una sola expresión.
 #[derive(Debug, Clone)]
 pub enum UnaryOp {
-    Not,  // !
-    Neg,  // - (negativo)
+    /// Negación lógica: `!expr`
+    Not,
+    /// Negación aritmética (cambia el signo): `-expr`
+    Neg,
 }
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Literal {
+    Boolean(bool),
+    Number(f64),
+    String(String),
+    None,
+}
+

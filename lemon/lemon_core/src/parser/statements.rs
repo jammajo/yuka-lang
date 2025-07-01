@@ -1,193 +1,287 @@
-use crate::token::TokenType;
-use crate::ast::{Statement, Expression};
-use super::Parser;
-use crate::grammar::*;
+use crate::token::{Token, TokenType};
+use crate::error::LemonError;
 
-impl Parser {
-    // === PUNTO DE ENTRADA GENERAL PARA STATEMENTS ===
+/// Función principal: convierte el código fuente en una lista de tokens
+pub fn tokenize(code: &str) -> Result<Vec<Token>, LemonError> {
+    let mut tokens = Vec::new();
+    let mut current = String::new();
+    let mut chars = code.chars().peekable();
+    let mut line = 1;
+    let mut column = 1;
+    let mut start_column = column;
 
-    // Determina qué tipo de sentencia se está analizando y delega al método correspondiente.
-    pub fn parse_statement(&mut self) -> Result<Statement, String> {
-        if self.match_token(&[TokenType::Keyword(Keyword::Let)]) {
-            self.parse_variable_declaration()
-        } else if self.match_token(&[TokenType::Keyword(Keyword::Fn)]) {
-            self.parse_function_declaration()
-        } else if self.match_token(&[TokenType::Keyword(Keyword::If)]) {
-            self.parse_if_statement()
-        } else if self.match_token(&[TokenType::Keyword(Keyword::While)]) {
-            self.parse_while_statement()
-        } else if self.match_token(&[TokenType::Keyword(Keyword::Do)]) {
-            self.parse_do_while_statement()
-        } else if self.match_token(&[TokenType::Keyword(Keyword::For)]) {
-            self.parse_for_statement()
-        } else if self.match_token(&[TokenType::Keyword(Keyword::Return)]) {
-            self.parse_return_statement()
-        } else if self.match_token(&[TokenType::Keyword(Keyword::Break)]) {
-            // 'break;' requiere punto y coma
-            self.consume(TokenType::Symbol(Symbol::Semicolon), "Se esperaba ';' después de 'break'")?;
-            Ok(Statement::Break)
-        } else if self.match_token(&[TokenType::Keyword(Keyword::Continue)]) {
-            // 'continue;' requiere punto y coma
-            self.consume(TokenType::Symbol(Symbol::Semicolon), "Se esperaba ';' después de 'continue'")?;
-            Ok(Statement::Continue)
-        } else if self.match_token(&[TokenType::Symbol(Symbol::OpenBrace)]) {
-            // Bloques: { ... }
-            let block = self.parse_block()?;
-            Ok(Statement::Block(block))
-        } else {
-            // Expresiones sueltas como statements (ej: `call();`)
-            let expr = self.parse_expression()?;
-            self.consume(TokenType::Symbol(Symbol::Semicolon), "Se esperaba ';' después de la expresión")?;
-            Ok(Statement::Expression(expr))
-        }
-    }
-
-    // === DECLARACIÓN DE VARIABLES ===
-    fn parse_variable_declaration(&mut self) -> Result<Statement, String> {
-        let name = self.consume_identifier("Se esperaba el nombre de la variable")?;
-
-        // Permite inicialización opcional: let x; o let x = expr;
-        let initializer = if self.match_token(&[TokenType::Symbol(Symbol::Define)]) {
-            Some(self.parse_expression()?)
-        } else {
-            None
-        };
-
-        self.consume(TokenType::Symbol(Symbol::Semicolon), "Se esperaba ';' después de la declaración")?;
-        Ok(Statement::Variable { name, initializer })
-    }
-
-    // === DECLARACIÓN DE FUNCIONES ===
-    fn parse_function_declaration(&mut self) -> Result<Statement, String> {
-        // Puede ser anónima o nombrada
-        let name = if self.check(TokenType::Identifier) {
-            Some(self.advance().value.clone())
-        } else {
-            None
-        };
-
-        self.consume(TokenType::Symbol(Symbol::OpenParen), "Se esperaba '(' después de 'fun'")?;
-
-        // Parámetros
-        let mut params = Vec::new();
-        if !self.check(TokenType::Symbol(Symbol::CloseParen)) {
-            loop {
-                params.push(self.consume_identifier("Se esperaba nombre del parámetro")?);
-                if !self.match_token(&[TokenType::Symbol(Symbol::Comma)]) {
+    while let Some(&ch) = chars.peek() {
+        // =========================
+        // Comentarios
+        // =========================
+        if ch == '/' && chars.clone().nth(1) == Some('/') {
+            while let Some(&c) = chars.peek() {
+                chars.next();
+                column += 1;
+                if c == '\n' {
                     break;
                 }
             }
+            line += 1;
+            column = 1;
+            continue;
         }
 
-        self.consume(TokenType::Symbol(Symbol::CloseParen), "Se esperaba ')' después de los parámetros")?;
-        self.consume(TokenType::Symbol(Symbol::OpenBrace), "Se esperaba '{' para el cuerpo de la función")?;
-        let body = self.parse_block()?;
+        if ch == '/' && chars.clone().nth(1) == Some('*') {
+            chars.next(); chars.next(); column += 2;
+            let mut closed = false;
+            while let Some(c) = chars.next() {
+                if c == '*' && chars.peek() == Some(&'/') {
+                    chars.next(); column += 2; closed = true; break;
+                }
+                if c == '\n' { line += 1; column = 1; } else { column += 1; }
+            }
+            if !closed {
+                return Err(LemonError::new("Unclosed multiline comment", line, column));
+            }
+            continue;
+        }
 
-        Ok(Statement::Function { name, params, body })
-    }
+        // =========================
+        // Literales de cadena
+        // =========================
+        if ch == '"' {
+            flush_current(&mut current, &mut tokens, line, start_column);
+            let mut string_value = String::new();
+            chars.next(); column += 1;
+            let mut closed = false;
 
-    // === SENTENCIA IF ===
-    fn parse_if_statement(&mut self) -> Result<Statement, String> {
-        self.consume(TokenType::Symbol(Symbol::OpenParen), "Se esperaba '(' después de 'if'")?;
-        let condition = self.parse_expression()?;
-        self.consume(TokenType::Symbol(Symbol::CloseParen), "Se esperaba ')' después de la condición")?;
+            while let Some(c) = chars.next() {
+                column += 1;
+                if c == '\\' {
+                    if let Some(escaped) = chars.next() {
+                        column += 1;
+                        match escaped {
+                            'n' => string_value.push('\n'),
+                            't' => string_value.push('\t'),
+                            '\\' => string_value.push('\\'),
+                            '"' => string_value.push('"'),
+                            _ => return Err(LemonError::new("Invalid escape character", line, column)),
+                        }
+                    }
+                } else if c == '"' {
+                    closed = true; break;
+                } else {
+                    string_value.push(c);
+                }
+            }
 
-        let then_branch = Box::new(self.parse_statement()?);
+            if !closed {
+                return Err(LemonError::new("Unclosed string literal", line, column));
+            }
 
-        // Opcional: else
-        let else_branch = if self.match_token(&[TokenType::Keyword(Keyword::Else)]) {
-            Some(Box::new(self.parse_statement()?))
+            tokens.push(Token {
+                token_type: TokenType::StringLiteral,
+                value: string_value,
+                line,
+                column: start_column,
+            });
+            continue;
+        }
+
+        // =========================
+        // Números (enteros y flotantes)
+        // =========================
+        if ch.is_ascii_digit() {
+            flush_current(&mut current, &mut tokens, line, start_column);
+            let mut number = String::new();
+            start_column = column;
+            let mut dot_found = false;
+
+            while let Some(&c) = chars.peek() {
+                if c == '.' {
+                    if dot_found { break; }
+                    if let Some(nxt) = chars.clone().nth(1) {
+                        if nxt.is_ascii_digit() {
+                            dot_found = true;
+                            number.push('.');
+                            chars.next();
+                            column += 1;
+                            continue;
+                        } else {
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                } else if c.is_ascii_digit() {
+                    number.push(c);
+                    chars.next();
+                    column += 1;
+                } else {
+                    break;
+                }
+            }
+
+            tokens.push(Token {
+                token_type: TokenType::Number,
+                value: number,
+                line,
+                column: start_column,
+            });
+            continue;
+        }
+
+        // =========================
+        // Lógicos dobles: &&, ||
+        // =========================
+        if let Some(double_log) = try_double_char_logical(&mut chars) {
+            flush_current(&mut current, &mut tokens, line, start_column);
+            tokens.push(Token {
+                token_type: TokenType::Logical(double_log),
+                value: double_log.to_string(),
+                line,
+                column,
+            });
+            column += 2;
+            continue;
+        }
+
+        // =========================
+        // Lógico unitario: !
+        // =========================
+        if let Some(logical) = crate::grammar::logicals::Logical::from_str(&ch.to_string()) {
+            flush_current(&mut current, &mut tokens, line, start_column);
+            tokens.push(Token {
+                token_type: TokenType::Logical(logical),
+                value: ch.to_string(),
+                line,
+                column,
+            });
+            chars.next(); column += 1;
+            continue;
+        }
+
+        // =========================
+        // Operadores dobles
+        // =========================
+        if let Some(double_op) = try_double_char_operator(&mut chars) {
+            flush_current(&mut current, &mut tokens, line, start_column);
+            tokens.push(Token {
+                token_type: TokenType::Operator(double_op.clone()),
+                value: double_op.to_string(),
+                line,
+                column,
+            });
+            column += 2;
+            continue;
+        }
+
+        if ch == '\n' {
+            flush_current(&mut current, &mut tokens, line, start_column);
+            chars.next(); line += 1; column = 1;
+        } else if ch.is_whitespace() {
+            flush_current(&mut current, &mut tokens, line, start_column);
+            chars.next(); column += 1;
+        } else if let Some(symbol) = crate::grammar::symbols::Symbol::from_char(ch) {
+            flush_current(&mut current, &mut tokens, line, start_column);
+            tokens.push(Token {
+                token_type: TokenType::Symbol(symbol.clone()),
+                value: symbol.to_char().to_string(),
+                line,
+                column,
+            });
+            chars.next(); column += 1;
+        } else if ch.is_control() {
+            return Err(LemonError::new("Illegal control character", line, column));
+        } else if !ch.is_ascii_graphic() && !ch.is_whitespace() {
+            return Err(LemonError::new("Illegal character in input", line, column));
         } else {
-            None
-        };
-
-        Ok(Statement::If {
-            condition,
-            then_branch,
-            else_branch,
-        })
-    }
-
-    // === BUCLE WHILE ===
-    fn parse_while_statement(&mut self) -> Result<Statement, String> {
-        self.consume(TokenType::Symbol(Symbol::OpenParen), "Se esperaba '(' después de 'while'")?;
-        let condition = self.parse_expression()?;
-        self.consume(TokenType::Symbol(Symbol::CloseParen), "Se esperaba ')' después de la condición")?;
-        let body = Box::new(self.parse_statement()?);
-
-        Ok(Statement::While { condition, body })
-    }
-
-    // === BUCLE DO-WHILE ===
-    fn parse_do_while_statement(&mut self) -> Result<Statement, String> {
-        let body = Box::new(self.parse_statement()?);
-
-        self.consume(TokenType::Keyword(Keyword::While), "Se esperaba 'while' después de bloque 'do'")?;
-        self.consume(TokenType::Symbol(Symbol::OpenParen), "Se esperaba '(' después de 'while'")?;
-        let condition = self.parse_expression()?;
-        self.consume(TokenType::Symbol(Symbol::CloseParen), "Se esperaba ')' después de la condición")?;
-        self.consume(TokenType::Symbol(Symbol::Semicolon), "Se esperaba ';' al final del do-while")?;
-
-        Ok(Statement::DoWhile { condition, body })
-    }
-
-    // === BUCLE FOR (C y estilo Python) ===
-    fn parse_for_statement(&mut self) -> Result<Statement, String> {
-        self.consume(TokenType::Symbol(Symbol::OpenParen), "Se esperaba '(' después de 'for'")?;
-
-        if self.match_token(&[TokenType::Keyword(Keyword::Let)]) {
-            // Estilo C: for (let i = 0; i < 10; i++) { ... }
-            let decl = self.parse_variable_declaration()?;
-            let condition = self.parse_expression()?;
-            self.consume(TokenType::Symbol(Symbol::Semicolon), "Se esperaba ';' después de condición")?;
-            let increment = self.parse_expression()?;
-            self.consume(TokenType::Symbol(Symbol::CloseParen), "Se esperaba ')' después del incremento")?;
-            let body = Box::new(self.parse_statement()?);
-
-            Ok(Statement::ForCStyle {
-                init: Box::new(decl),
-                condition,
-                increment,
-                body,
-            })
-        } else {
-            // Estilo Python: for (item in iterable) { ... }
-            let iterator = self.consume_identifier("Se esperaba nombre de la variable")?;
-            self.consume(TokenType::Keyword(Keyword::In), "Se esperaba 'in' en bucle for estilo Python")?;
-            let iterable = self.parse_expression()?;
-            self.consume(TokenType::Symbol(Symbol::CloseParen), "Se esperaba ')' después de expresión iterable")?;
-            let body = Box::new(self.parse_statement()?);
-
-            Ok(Statement::ForIn {
-                variable: iterator,
-                iterable,
-                body,
-            })
+            if current.is_empty() {
+                start_column = column;
+            }
+            current.push(ch);
+            chars.next(); column += 1;
         }
     }
 
-    // === RETURN ===
-    fn parse_return_statement(&mut self) -> Result<Statement, String> {
-        // Valor opcional: return; o return expr;
-        let value = if !self.check(TokenType::Symbol(Symbol::Semicolon)) {
-            Some(self.parse_expression()?)
-        } else {
-            None
-        };
+    flush_current(&mut current, &mut tokens, line, start_column);
 
-        self.consume(TokenType::Symbol(Symbol::Semicolon), "Se esperaba ';' después de 'return'")?;
-        Ok(Statement::Return(value))
+    tokens.push(Token {
+        token_type: TokenType::EOF,
+        value: "<EOF>".to_string(),
+        line,
+        column,
+    });
+
+    Ok(tokens)
+}
+
+fn flush_current(current: &mut String, tokens: &mut Vec<Token>, line: usize, column: usize) {
+    if current.is_empty() { return; }
+    tokens.push(classify(current, line, column));
+    current.clear();
+}
+
+fn classify(word: &str, line: usize, column: usize) -> Token {
+    use TokenType::*;
+    let value = word.to_string();
+
+    if let Some(kw) = crate::grammar::keywords::Keyword::from_str(word) {
+        return Token { token_type: Keyword(kw), value, line, column };
     }
+    if let Some(ty) = crate::grammar::types::Type::from_str(word) {
+        return Token { token_type: Type(ty), value, line, column };
+    }
+    if let Some(op) = crate::grammar::operators::Operator::from_str(word) {
+        return Token { token_type: Operator(op), value, line, column };
+    }
+    if let Some(cmp) = crate::grammar::comparators::Comparator::from_str(word) {
+        return Token { token_type: Comparator(cmp), value, line, column };
+    }
+    if let Some(log) = crate::grammar::logicals::Logical::from_str(word) {
+        return Token { token_type: Logical(log), value, line, column };
+    }
+    if let Some(comment) = crate::grammar::comments::Comment::from_str(word) {
+        return Token { token_type: Comment(comment), value, line, column };
+    }
+    if word.starts_with(|c: char| c.is_ascii_digit()) {
+        return Token { token_type: Unknown, value, line, column };
+    }
+    if word.chars().all(|c| c.is_alphanumeric() || c == '_') {
+        return Token { token_type: Identifier, value, line, column };
+    }
+    Token { token_type: Unknown, value, line, column }
+}
 
-    // === BLOQUE ===
-    fn parse_block(&mut self) -> Result<Vec<Statement>, String> {
-        let mut statements = Vec::new();
+fn try_double_char_operator(
+    chars: &mut std::iter::Peekable<std::str::Chars>,
+) -> Option<crate::grammar::operators::Operator> {
+    let ch1 = chars.peek().copied()?;
+    let ch2 = chars.clone().nth(1)?;
+    let pair = format!("{}{}", ch1, ch2);
 
-        while !self.check(TokenType::Symbol(Symbol::CloseBrace)) && !self.is_at_end() {
-            statements.push(self.parse_statement()?);
-        }
+    crate::grammar::operators::Operator::from_str(&pair).map(|op| {
+        chars.next(); chars.next(); op
+    })
+}
 
-        self.consume(TokenType::Symbol(Symbol::CloseBrace), "Se esperaba '}' al final del bloque")?;
-        Ok(statements)
+fn try_double_char_logical(
+    chars: &mut std::iter::Peekable<std::str::Chars>,
+) -> Option<crate::grammar::logicals::Logical> {
+    let ch1 = chars.peek().copied()?;
+    let ch2 = chars.clone().nth(1)?;
+    let pair = format!("{}{}", ch1, ch2);
+
+    crate::grammar::logicals::Logical::from_str(&pair).map(|log| {
+        chars.next(); chars.next(); log
+    })
+}
+
+/// Punto de entrada externo para parser de expresiones
+pub fn parse_expression_tokens(tokens: &[Token]) -> Result<crate::ast::Expression, String> {
+    let mut parser = crate::parser::Parser::new(tokens.to_vec());
+    parser.parse_expression()
+}
+
+/// Método de extensión para Parser
+impl crate::parser::Parser {
+    pub fn parse_expression(&mut self) -> Result<crate::ast::Expression, String> {
+        self.parse_assignment()
     }
 }

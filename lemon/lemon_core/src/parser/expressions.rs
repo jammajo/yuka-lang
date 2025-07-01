@@ -1,281 +1,278 @@
-// Importaciones necesarias para acceder a los tokens, expresiones del AST y definiciones del parser
 use crate::token::{Token, TokenType};
-use crate::ast::{Expression, BinaryOp, UnaryOp};
-use super::Parser;
-use crate::grammar::*;
+use crate::error::LemonError;
 
-// Implementación de los métodos del parser
-impl Parser {
-    // Punto de entrada para parsear cualquier expresión
-    pub fn parse_expression(&mut self) -> Result<Expression, String> {
-        self.parse_assignment()
-    }
+/// Función principal: convierte el código fuente en una lista de tokens
+pub fn tokenize(code: &str) -> Result<Vec<Token>, LemonError> {
+    let mut tokens = Vec::new();
+    let mut current = String::new();
+    let mut chars = code.chars().peekable();
+    let mut line = 1;
+    let mut column = 1;
+    let mut start_column = column;
 
-    // Parseo de asignaciones (ej. x = y;)
-    fn parse_assignment(&mut self) -> Result<Expression, String> {
-        let expr = self.parse_ternary()?; // Parte izquierda de la asignación
-
-        // Verifica si el siguiente token es '='
-        if self.match_token(&[TokenType::Symbol(Symbol::Define)]) {
-            let value = self.parse_assignment()?; // Recursivo para permitir asignaciones encadenadas
-
-            match expr {
-                // Solo se puede asignar a una variable (ej. x = 5)
-                Expression::Variable(name) => Ok(Expression::Assign {
-                    variable: name,
-                    value: Box::new(value),
-                }),
-                // También se permite asignar a una propiedad de un objeto (ej. obj.prop = 10)
-                Expression::Get { object, name } => Ok(Expression::Set {
-                    object,
-                    name,
-                    value: Box::new(value),
-                }),
-                // Si no es una variable ni propiedad, es un error
-                _ => Err("Error: solo se puede asignar a una variable o propiedad".into()),
+    while let Some(&ch) = chars.peek() {
+        // =========================
+        // Comentarios
+        // =========================
+        if ch == '/' && chars.clone().nth(1) == Some('/') {
+            while let Some(&c) = chars.peek() {
+                chars.next();
+                column += 1;
+                if c == '\n' {
+                    break;
+                }
             }
-        } else {
-            Ok(expr) // Si no es asignación, se retorna la expresión original
-        }
-    }
-
-    // Operador ternario: cond ? expr1 : expr2
-    fn parse_ternary(&mut self) -> Result<Expression, String> {
-        let condition = self.parse_logical_or()?; // Se parsea la condición
-
-        // Verifica si hay '?'
-        if self.match_token(&[TokenType::Symbol(Symbol::Question)]) {
-            let true_branch = self.parse_expression()?; // Rama verdadera
-            self.consume(TokenType::Symbol(Symbol::Colon), "Se esperaba ':' en expresión ternaria")?;
-            let false_branch = self.parse_expression()?; // Rama falsa
-
-            return Ok(Expression::Ternary {
-                condition: Box::new(condition),
-                then_branch: Box::new(true_branch),
-                else_branch: Box::new(false_branch),
-            });
+            line += 1;
+            column = 1;
+            continue;
         }
 
-        Ok(condition) // Si no hay '?', solo se devuelve la condición
-    }
-
-    // Operador lógico OR (`or`)
-    fn parse_logical_or(&mut self) -> Result<Expression, String> {
-        let mut expr = self.parse_logical_and()?; // Se evalúa primero el AND por precedencia
-
-        while self.match_token(&[TokenType::Logical(Logical::Or)]) {
-            let right = self.parse_logical_and()?;
-            expr = Expression::Binary {
-                left: Box::new(expr),
-                op: BinaryOp::Or,
-                right: Box::new(right),
-            };
+        if ch == '/' && chars.clone().nth(1) == Some('*') {
+            chars.next(); chars.next(); column += 2;
+            let mut closed = false;
+            while let Some(c) = chars.next() {
+                if c == '*' && chars.peek() == Some(&'/') {
+                    chars.next(); column += 2; closed = true; break;
+                }
+                if c == '\n' { line += 1; column = 1; } else { column += 1; }
+            }
+            if !closed {
+                return Err(LemonError::new("Unclosed multiline comment", line, column));
+            }
+            continue;
         }
 
-        Ok(expr)
-    }
+        // =========================
+        // Literales de cadena
+        // =========================
+        if ch == '"' {
+            flush_current(&mut current, &mut tokens, line, start_column);
+            let mut string_value = String::new();
+            chars.next(); column += 1;
+            let mut closed = false;
 
-    // Operador lógico AND (`and`)
-    fn parse_logical_and(&mut self) -> Result<Expression, String> {
-        let mut expr = self.parse_equality()?; // Se evalúan primero las igualdades
-
-        while self.match_token(&[TokenType::Logical(Logical::And)]) {
-            let right = self.parse_equality()?;
-            expr = Expression::Binary {
-                left: Box::new(expr),
-                op: BinaryOp::And,
-                right: Box::new(right),
-            };
-        }
-
-        Ok(expr)
-    }
-
-    // Comparadores de igualdad (`==`, `!=`)
-    fn parse_equality(&mut self) -> Result<Expression, String> {
-        let mut expr = self.parse_comparison()?; // Primero se evalúan comparaciones relacionales
-
-        while self.match_token(&[TokenType::Comparator(Comparator::NotEqual), TokenType::Comparator(Comparator::Equal)]) {
-            let op = match self.previous().token_type {
-                TokenType::Comparator(Comparator::NotEqual) => BinaryOp::Neq,
-                TokenType::Comparator(Comparator::Equal) => BinaryOp::Eq,
-                _ => unreachable!(),
-            };
-            let right = self.parse_comparison()?;
-            expr = Expression::Binary {
-                left: Box::new(expr),
-                op,
-                right: Box::new(right),
-            };
-        }
-
-        Ok(expr)
-    }
-
-    // Comparaciones relacionales (`<`, `>`, `<=`, `>=`)
-    fn parse_comparison(&mut self) -> Result<Expression, String> {
-        let mut expr = self.parse_term()?; // Suma/resta se evalúan luego
-
-        while self.match_token(&[
-            TokenType::Comparator(Comparator::Greater),
-            TokenType::Comparator(Comparator::GreaterEqual),
-            TokenType::Comparator(Comparator::Less),
-            TokenType::Comparator(Comparator::LessEqual),
-        ]) {
-            let op = match self.previous().token_type {
-                TokenType::Comparator(Comparator::Greater) => BinaryOp::Gt,
-                TokenType::Comparator(Comparator::GreaterEqual) => BinaryOp::Gte,
-                TokenType::Comparator(Comparator::Less) => BinaryOp::Lt,
-                TokenType::Comparator(Comparator::LessEqual) => BinaryOp::Lte,
-                _ => unreachable!(),
-            };
-            let right = self.parse_term()?;
-            expr = Expression::Binary {
-                left: Box::new(expr),
-                op,
-                right: Box::new(right),
-            };
-        }
-
-        Ok(expr)
-    }
-
-    // Suma y resta (`+`, `-`)
-    fn parse_term(&mut self) -> Result<Expression, String> {
-        let mut expr = self.parse_factor()?; // Multiplicación/división se evalúan primero
-
-        while self.match_token(&[TokenType::Operator(Operator::Add), TokenType::Operator(Operator::Subtract)]) {
-            let op = match self.previous().token_type {
-                TokenType::Operator(Operator::Add) => BinaryOp::Add,
-                TokenType::Operator(Operator::Subtract) => BinaryOp::Sub,
-                _ => unreachable!(),
-            };
-            let right = self.parse_factor()?;
-            expr = Expression::Binary {
-                left: Box::new(expr),
-                op,
-                right: Box::new(right),
-            };
-        }
-
-        Ok(expr)
-    }
-
-    // Multiplicación y división (`*`, `/`)
-    fn parse_factor(&mut self) -> Result<Expression, String> {
-        let mut expr = self.parse_unary()?; // Los unarios se evalúan antes
-
-        while self.match_token(&[TokenType::Operator(Operator::Multiply), TokenType::Operator(Operator::Divide)]) {
-            let op = match self.previous().token_type {
-                TokenType::Operator(Operator::Multiply) => BinaryOp::Mul,
-                TokenType::Operator(Operator::Divide) => BinaryOp::Div,
-                _ => unreachable!(),
-            };
-            let right = self.parse_unary()?;
-            expr = Expression::Binary {
-                left: Box::new(expr),
-                op,
-                right: Box::new(right),
-            };
-        }
-
-        Ok(expr)
-    }
-
-    // Operadores unarios (`!`, `-`)
-    fn parse_unary(&mut self) -> Result<Expression, String> {
-        if self.match_token(&[TokenType::Logical(Logical::Not), TokenType::Operator(Operator::Subtract)]) {
-            let op = match self.previous().token_type {
-                TokenType::Logical(Logical::Not) => UnaryOp::Not,
-                TokenType::Operator(Operator::Subtract) => UnaryOp::Neg,
-                _ => unreachable!(),
-            };
-            let expr = self.parse_unary()?; // Recursividad permite múltiples operadores unarios
-            return Ok(Expression::Unary {
-                op,
-                expr: Box::new(expr),
-            });
-        }
-
-        self.parse_call() // Si no hay unario, intenta parsear llamadas o propiedades
-    }
-
-    // Llamadas a funciones y acceso a propiedades (`foo()`, `obj.prop`)
-    fn parse_call(&mut self) -> Result<Expression, String> {
-        let mut expr = self.parse_primary()?; // Punto de partida
-
-        loop {
-            // Parseo de llamadas: `func(args...)`
-            if self.match_token(&[TokenType::Symbol(Symbol::OpenParen)]) {
-                let mut args = Vec::new();
-
-                if !self.check(TokenType::Symbol(Symbol::CloseParen)) {
-                    loop {
-                        args.push(self.parse_expression()?);
-                        if !self.match_token(&[TokenType::Symbol(Symbol::Comma)]) {
-                            break;
+            while let Some(c) = chars.next() {
+                column += 1;
+                if c == '\\' {
+                    if let Some(escaped) = chars.next() {
+                        column += 1;
+                        match escaped {
+                            'n' => string_value.push('\n'),
+                            't' => string_value.push('\t'),
+                            '\\' => string_value.push('\\'),
+                            '"' => string_value.push('"'),
+                            _ => return Err(LemonError::new("Invalid escape character", line, column)),
                         }
                     }
+                } else if c == '"' {
+                    closed = true; break;
+                } else {
+                    string_value.push(c);
                 }
+            }
 
-                self.consume(TokenType::Symbol(Symbol::CloseParen), "Se esperaba ')' después de los argumentos")?;
-                expr = Expression::Call {
-                    function: Box::new(expr),
-                    args,
-                };
+            if !closed {
+                return Err(LemonError::new("Unclosed string literal", line, column));
             }
-            // Parseo de acceso a propiedad: `obj.prop`
-            else if self.match_token(&[TokenType::Symbol(Symbol::Dot)]) {
-                let name = self.consume_identifier("Se esperaba un nombre de propiedad después de '.'")?;
-                expr = Expression::Get {
-                    object: Box::new(expr),
-                    name,
-                };
-            }
-            else {
-                break;
-            }
+
+            tokens.push(Token {
+                token_type: TokenType::StringLiteral,
+                value: string_value,
+                line,
+                column: start_column,
+            });
+            continue;
         }
 
-        Ok(expr)
-    }
+        // =========================
+        // Números (enteros y flotantes)
+        // =========================
+        if ch.is_ascii_digit() {
+            flush_current(&mut current, &mut tokens, line, start_column);
+            let mut number = String::new();
+            start_column = column;
+            let mut dot_found = false;
 
-    // Parseo de literales, variables y agrupaciones (`(expr)`)
-    fn parse_primary(&mut self) -> Result<Expression, String> {
-        let token = self.peek();
+            while let Some(&c) = chars.peek() {
+                if c == '.' {
+                    if dot_found { break; }
+                    if let Some(nxt) = chars.clone().nth(1) {
+                        if nxt.is_ascii_digit() {
+                            dot_found = true;
+                            number.push('.');
+                            chars.next();
+                            column += 1;
+                            continue;
+                        } else {
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                } else if c.is_ascii_digit() {
+                    number.push(c);
+                    chars.next();
+                    column += 1;
+                } else {
+                    break;
+                }
+            }
 
-        match token.token_type {
-            TokenType::Keyword(Keyword::False) => {
-                self.advance();
-                Ok(Expression::Boolean(false))
+            tokens.push(Token {
+                token_type: TokenType::Number,
+                value: number,
+                line,
+                column: start_column,
+            });
+            continue;
+        }
+
+        // =========================
+        // Lógicos dobles: &&, ||
+        // =========================
+        if let Some(double_log) = try_double_char_logical(&mut chars) {
+            flush_current(&mut current, &mut tokens, line, start_column);
+            tokens.push(Token {
+                token_type: TokenType::Logical(double_log),
+                value: double_log.to_string(),
+                line,
+                column,
+            });
+            column += 2;
+            continue;
+        }
+
+        // =========================
+        // Lógico unitario: !
+        // =========================
+        if let Some(logical) = crate::grammar::logicals::Logical::from_str(&ch.to_string()) {
+            flush_current(&mut current, &mut tokens, line, start_column);
+            tokens.push(Token {
+                token_type: TokenType::Logical(logical),
+                value: ch.to_string(),
+                line,
+                column,
+            });
+            chars.next(); column += 1;
+            continue;
+        }
+
+        // =========================
+        // Operadores dobles
+        // =========================
+        if let Some(double_op) = try_double_char_operator(&mut chars) {
+            flush_current(&mut current, &mut tokens, line, start_column);
+            tokens.push(Token {
+                token_type: TokenType::Operator(double_op.clone()),
+                value: double_op.to_string(),
+                line,
+                column,
+            });
+            column += 2;
+            continue;
+        }
+
+        if ch == '\n' {
+            flush_current(&mut current, &mut tokens, line, start_column);
+            chars.next(); line += 1; column = 1;
+        } else if ch.is_whitespace() {
+            flush_current(&mut current, &mut tokens, line, start_column);
+            chars.next(); column += 1;
+        } else if let Some(symbol) = crate::grammar::symbols::Symbol::from_char(ch) {
+            flush_current(&mut current, &mut tokens, line, start_column);
+            tokens.push(Token {
+                token_type: TokenType::Symbol(symbol.clone()),
+                value: symbol.to_char().to_string(),
+                line,
+                column,
+            });
+            chars.next(); column += 1;
+        } else if ch.is_control() {
+            return Err(LemonError::new("Illegal control character", line, column));
+        } else if !ch.is_ascii_graphic() && !ch.is_whitespace() {
+            return Err(LemonError::new("Illegal character in input", line, column));
+        } else {
+            if current.is_empty() {
+                start_column = column;
             }
-            TokenType::Keyword(Keyword::True) => {
-                self.advance();
-                Ok(Expression::Boolean(true))
-            }
-            TokenType::Type(Type::Null) => {
-                self.advance();
-                Ok(Expression::None)
-            }
-            TokenType::Number => {
-                let value = self.advance().value.parse::<f64>().map_err(|_| "Número inválido")?;
-                Ok(Expression::Number(value))
-            }
-            TokenType::Type(Type::String) => {
-                let value = self.advance().value.clone();
-                Ok(Expression::String(value))
-            }
-            TokenType::Identifier => {
-                let name = self.advance().value.clone();
-                Ok(Expression::Variable(name))
-            }
-            TokenType::Symbol(Symbol::OpenParen) => {
-                self.advance();
-                let expr = self.parse_expression()?; // Se permite agrupación con paréntesis
-                self.consume(TokenType::Symbol(Symbol::CloseParen), "Se esperaba ')' después de la expresión")?;
-                Ok(Expression::Grouping(Box::new(expr)))
-            }
-            _ => Err(format!("Expresión inesperada: '{}'", token.value)),
+            current.push(ch);
+            chars.next(); column += 1;
         }
     }
+
+    flush_current(&mut current, &mut tokens, line, start_column);
+
+    tokens.push(Token {
+        token_type: TokenType::EOF,
+        value: "<EOF>".to_string(),
+        line,
+        column,
+    });
+
+    Ok(tokens)
+}
+
+fn flush_current(current: &mut String, tokens: &mut Vec<Token>, line: usize, column: usize) {
+    if current.is_empty() { return; }
+    tokens.push(classify(current, line, column));
+    current.clear();
+}
+
+fn classify(word: &str, line: usize, column: usize) -> Token {
+    use TokenType::*;
+    let value = word.to_string();
+
+    if let Some(kw) = crate::grammar::keywords::Keyword::from_str(word) {
+        return Token { token_type: Keyword(kw), value, line, column };
+    }
+    if let Some(ty) = crate::grammar::types::Type::from_str(word) {
+        return Token { token_type: Type(ty), value, line, column };
+    }
+    if let Some(op) = crate::grammar::operators::Operator::from_str(word) {
+        return Token { token_type: Operator(op), value, line, column };
+    }
+    if let Some(cmp) = crate::grammar::comparators::Comparator::from_str(word) {
+        return Token { token_type: Comparator(cmp), value, line, column };
+    }
+    if let Some(log) = crate::grammar::logicals::Logical::from_str(word) {
+        return Token { token_type: Logical(log), value, line, column };
+    }
+    if let Some(comment) = crate::grammar::comments::Comment::from_str(word) {
+        return Token { token_type: Comment(comment), value, line, column };
+    }
+
+    if word.starts_with(|c: char| c.is_ascii_digit()) {
+        return Token { token_type: Unknown, value, line, column };
+    }
+
+    if word.chars().all(|c| c.is_alphanumeric() || c == '_') {
+        return Token { token_type: Identifier, value, line, column };
+    }
+
+    Token { token_type: Unknown, value, line, column }
+}
+
+
+fn try_double_char_operator(
+    chars: &mut std::iter::Peekable<std::str::Chars>,
+) -> Option<crate::grammar::operators::Operator> {
+    let ch1 = chars.peek().copied()?;
+    let ch2 = chars.clone().nth(1)?;
+    let pair = format!("{}{}", ch1, ch2);
+
+    crate::grammar::operators::Operator::from_str(&pair).map(|op| {
+        chars.next(); chars.next(); op
+    })
+}
+
+fn try_double_char_logical(
+    chars: &mut std::iter::Peekable<std::str::Chars>,
+) -> Option<crate::grammar::logicals::Logical> {
+    let ch1 = chars.peek().copied()?;
+    let ch2 = chars.clone().nth(1)?;
+    let pair = format!("{}{}", ch1, ch2);
+
+    crate::grammar::logicals::Logical::from_str(&pair).map(|log| {
+        chars.next(); chars.next(); log
+    })
 }

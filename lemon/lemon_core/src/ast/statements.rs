@@ -1,88 +1,148 @@
 use crate::ast::expressions::Expression;
 
 /// Representa una instrucción completa del lenguaje Yuka.
-/// A diferencia de `Expression`, los `Statement` son acciones que ocurren por sí mismas,
-/// y no necesariamente producen un valor. Ejemplos incluyen declaraciones, bucles, bloques, etc.
+///
+/// A diferencia de `Expression`, los `Statement` no siempre producen un valor.
+/// Su propósito es ejecutar acciones, como declarar variables, controlar flujo,
+/// agrupar instrucciones, entre otros.
 #[derive(Debug, Clone)]
 pub enum Statement {
-    /// Declaración de variable con valor obligatorio (forma alternativa a `Variable`)
+    /// Declaración de variable con valor obligatorio.
+    ///
     /// Ejemplo: `let x = 5;`
     Let {
-        name: String,        // Nombre de la variable
-        value: Expression,   // Valor que se asigna al declararla
+        /// Nombre de la variable.
+        name: String,
+        /// Valor que se le asigna al declararla.
+        value: Expression,
     },
 
     /// Declaración de función, con o sin nombre.
+    ///
     /// Ejemplo: `fun greet(name) { ... }`
     Function {
-        name: Option<String>,      // Nombre de la función (puede ser anónima)
-        params: Vec<String>,       // Lista de parámetros (identificadores)
-        body: Vec<Statement>,      // Bloque de instrucciones que componen la función
+        /// Nombre de la función (opcional si es anónima).
+        name: Option<String>,
+        /// Lista de nombres de parámetros.
+        params: Vec<String>,
+        /// Bloque de instrucciones que conforman el cuerpo de la función.
+        body: Vec<Statement>,
     },
 
-    /// Condicional `if`, con rama `else` opcional.
+    /// Instrucción condicional `if`, con rama `else` opcional.
+    ///
     /// Ejemplo: `if (cond) { ... } else { ... }`
     If {
-        condition: Expression,                // Condición que se evalúa
-        then_branch: Box<Statement>,          // Bloque ejecutado si la condición es verdadera
-        else_branch: Option<Box<Statement>>,  // Bloque ejecutado si es falsa (opcional)
+        /// Condición a evaluar.
+        condition: Expression,
+        /// Rama ejecutada si la condición es verdadera.
+        then_branch: Box<Statement>,
+        /// Rama ejecutada si la condición es falsa (opcional).
+        else_branch: Option<Box<Statement>>,
     },
 
-    /// Bucle `while`, que repite mientras la condición sea verdadera.
+    /// Bucle `while`, que repite mientras la condición se mantenga verdadera.
+    ///
     /// Ejemplo: `while (cond) { ... }`
     While {
-        condition: Expression,     // Condición booleana
-        body: Box<Statement>,      // Cuerpo del bucle (bloque a repetir)
+        /// Condición booleana de control.
+        condition: Expression,
+        /// Instrucciones que se repiten mientras la condición sea verdadera.
+        body: Box<Statement>,
     },
 
-    /// Bucle `do-while`, que ejecuta el cuerpo al menos una vez.
+    /// Bucle `do-while`, ejecuta primero el cuerpo y luego evalúa la condición.
+    ///
     /// Ejemplo: `do { ... } while (cond);`
     DoWhile {
-        body: Box<Statement>,      // Cuerpo del bucle
-        condition: Expression,     // Condición evaluada después de la ejecución
+        /// Instrucciones que se ejecutan al menos una vez.
+        body: Box<Statement>,
+        /// Condición evaluada al final de cada iteración.
+        condition: Expression,
     },
 
-    /// Bucle estilo C: `for (init; condition; increment) { body }`
+    /// Bucle estilo C: `for (init; condition; increment) { ... }`
+    ///
+    /// Ejemplo:
+    /// ```
+    /// for (let i = 0; i < 10; i = i + 1) { ... }
+    /// ```
     ForCStyle {
-        init: Box<Statement>,      // Declaración o asignación inicial
-        condition: Expression,     // Condición que determina si continúa
-        increment: Expression,     // Expresión ejecutada después de cada iteración
-        body: Box<Statement>,      // Cuerpo del bucle
+        /// Inicialización de la variable del bucle.
+        init: Box<Statement>,
+        /// Condición de continuación.
+        condition: Expression,
+        /// Expresión ejecutada al final de cada iteración.
+        increment: Expression,
+        /// Instrucciones que se repiten mientras la condición sea verdadera.
+        body: Box<Statement>,
     },
 
-    /// Bucle estilo Python: `for var in iterable { body }`
+    /// Bucle estilo Python: `for var in iterable { ... }`
+    ///
+    /// Ejemplo: `for item in list { ... }`
     ForIn {
-        variable: String,          // Variable iteradora (ej. `i`)
-        iterable: Expression,      // Expresión que produce una secuencia iterable
-        body: Box<Statement>,      // Cuerpo del bucle
+        /// Nombre de la variable iteradora.
+        variable: String,
+        /// Expresión que produce la secuencia a iterar.
+        iterable: Expression,
+        /// Instrucciones del cuerpo del bucle.
+        body: Box<Statement>,
     },
 
-    /// Retorno desde una función: `return expr;`
-    /// Si no hay valor, representa `return;` (con `None`)
+    /// Instrucción `return`, para salir de una función con o sin valor.
+    ///
+    /// Ejemplo: `return;` o `return x + 2;`
     Return(Option<Expression>),
 
-    /// Expresión usada como instrucción: `call();` o `a + b;`
+    /// Una expresión utilizada como instrucción.
+    ///
+    /// Ejemplo: `call();` o `x + 2;`
     Expr(Expression),
 
-    /// Bloque de múltiples instrucciones agrupadas: `{ stmt1; stmt2; ... }`
+    /// Bloque de instrucciones agrupadas entre llaves `{ ... }`.
+    ///
+    /// Ejemplo:
+    /// ```
+    /// {
+    ///     let x = 1;
+    ///     print(x);
+    /// }
+    /// ```
     Block(Vec<Statement>),
 
-    /// Interrupción de bucle o switch: `break;`
+    /// Finaliza la ejecución de un bucle o estructura repetitiva.
+    ///
+    /// Equivalente a `break;`
     Break,
 
-    /// Marca de fin o finalización explícita (puede usarse para ciclos infinitos, tareas, etc.)
+    /// Finaliza una tarea, hilo o ciclo infinito de forma explícita.
+    ///
+    /// Puede usarse como instrucción semántica para marcar el fin de algo.
     End,
 
-    /// Continúa con la siguiente iteración de un bucle: `continue;`
+    /// Salta directamente a la siguiente iteración del bucle actual.
+    ///
+    /// Equivalente a `continue;`
     Continue,
 
-    /// Alias para usar expresiones sueltas como statements (útil para diseño flexible)
+    /// Expresión usada como instrucción (forma alternativa a `Expr`).
+    ///
+    /// Permite usar expresiones solas como declaraciones válidas.
     Expression(Expression),
 
-    /// Declaración de variable con inicialización opcional.
+    /// Declaración de variable con o sin inicialización.
+    ///
     /// Ejemplo: `let x;` o `let x = 42;`
     Variable {
-        name: String,                 // Nombre de la variable
-        initializer: Option<Expression>, // Valor opcional (puede ser None)
+        /// Nombre de la variable declarada.
+        name: String,
+        /// Valor opcional con el que se inicializa.
+        initializer: Option<Expression>,
     },
+
+    /// Llamada a una función interna del lenguaje o del runtime.
+    ///
+    /// Ejemplo: `@print("Hola")`
+    BuiltinCall(String, Expression),
 }
